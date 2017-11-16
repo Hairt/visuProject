@@ -47,10 +47,24 @@ polyline{
     //Traiter un datum des données tsv et renvoie sa 
     //Version traitée ou rien si le datum est invalide
     function traiterObjetTsv(d) {
+        
+       /* d.questions = {};
+       // var test = "i5_1";
+        for(var i=1; i<= 20; i++){
+           d.questions =+ d.i5_1; 
+        }  */  
 
-        d.ages = d.age;
-        d.question = d.i5_1;
-        return d;
+        var line = {};
+        for(var key in d){
+            if(key.startsWith("i5_")){
+                line[key] = d[key];
+            }
+            if(key.startsWith("age")){
+                line[key] = d[key];
+            }
+        }
+        console.log(line);
+        return line;
     }
     
  //Construit le dataset à partir des données tsv
@@ -58,15 +72,18 @@ polyline{
         //Calcule des series de données par prénoms
         var seriesParQuestion = {};
         data.forEach(d => {
-            //Récupère la série du prénom en la créant si inexistante
-            var serie = seriesParQuestion[d.question] = d.question in seriesParQuestion ? seriesParQuestion[d.question] : [];
-            //Ajoute la donnée à la série
-            serie.push(d);
+            //Récupère seulement le premier sondage
+            if(d === d.question)
+            {
+                var serie = seriesParQuestion[d.question] = d.question in seriesParQuestion ? seriesParQuestion[d.question] : [];
+                console.log(serie);
+                //Ajoute la donnée à la série
+                serie.push(d);
+            }
         });
         //Récupère l'ensemble des clé (prénoms) et des valeurs (series)
         dataset.reponses = Object.keys(seriesParQuestion);
         dataset.filtres = Object.values(seriesParQuestion);
-        console.log(dataset.ages);
     }
     
  /*
@@ -82,8 +99,9 @@ polyline{
         if (error)
             throw error;
         //Construit le dataset
+        
         construireDataset(data);
-        console.log(data);
+        console.log(dataset.filtres);
     });
 
 var svg = d3.select("body")
