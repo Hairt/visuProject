@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+      rect.bordered {
+        stroke: #E6E6E6;
+        stroke-width:2px;
+      }
+
+      text.mono {
+        font-size: 9pt;
+        font-family: Consolas, courier;
+        fill: #aaa;
+      }
+
+      text.axis-workweek {
+        fill: #000;
+      }
+
+      text.axis-worktime {
+        fill: #000;
+      }
+    </style>
+    <script src="http://d3js.org/d3.v4.js"></script>
+    </head>
+    <body>
+        <div id="chart"></div>
+        <div id="dataset-picker">
+        </div>
+    <script type="text/javascript">
+        var margin = { top: 50, right: 0, bottom: 100, left: 30 },
+            width = 960 - margin.left - margin.right,
+            height = 430 - margin.top - margin.bottom,
+            datasets= ["ArbreTotal.txt"];//Ajouter "ArbreTotal2.tsv" ou gerer a part
+        
+        var svg = d3.select("#chart").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+
+        
+        var heatmapChart = function(tsvFile) {
+        d3.tsv(tsvFile,
+        function(d) {
+          return {
+             dominialite: d.DOMINIALITE,
+             croissance: d.CROISSANCE,
+             arrondissement: d.ARRONDISSEMENT 
+          };
+        },
+        function(error, data) {
+          
+          var tabArrondissementsUniques = d3.set(data, d => d.arrondissement).values();
+          var monEchelleX = d3.scaleBand().domain(tabArrondissementsUniques).range([0, width]);
+          var tabDominialitesUniques = d3.set(data, d=> d.dominialite).values();
+          var monEchelleY = d3.scaleBand().domain(tabDominialitesUniques).range([0, height]);
+          var gridSize = monEchelleX.bandwidth();   
+          var legendElementWidth = gridSize*2,
+              buckets = 9,
+              colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"], // alternatively colorbrewer.YlGnBu[9]
+              //Liste distinct des dominialite 
+              //dominialites= tabArrondissement
+              dominialites = tabDominialitesUniques,
+              //Liste distinct des espece et/ou arrondissement
+              //arrondissements= tabArrondissementsUniques
+              arrondissements = tabArrondissementsUniques;
+             
+              
+             // console.log(dominialites);
+                //console.log(arrondissements);
+              //console.log(monEchelleY.domain());
+             
+              //console.log(monEchelleY.domain().length);
+              //console.log(monEchelleX.domain().length);
+              //Echelle de couleur par quantilles statistiques
+          var colorScale = d3.scaleQuantile()
+              .domain([0, buckets - 1, d3.max(data, function (d) { return d.croissance; })])
+              .range(colors);
+
+                 
+         var dominialiteLabels = svg.selectAll(".dominialiteLabel")
+          .data(dominialites)
+          .enter().append("text")
+            .text(function (d) { return d; })
+            .attr("x", 0)
+            .attr("y", function (d, i) { return i * gridSize; })//MonEchelleY
+            .style("text-anchor", "left")
+            .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
+           
+      var arrondissementLabels = svg.selectAll(".arrondissementLabel")
+          .data(arrondissements)
+          .enter().append("text")
+            .text(function(d) { return d; })
+            .attr("x", function(d, i) { return i * gridSize; })//MonEchelleX
+            .attr("y", 0)
+            .style("text-anchor", "end")
+            .attr("transform", "translate(" + gridSize / 2 + ", -6)  rotate(-90)")
+         
+          
+          var cards = svg.selectAll(".CROISSANCE")
+              .data(data, function(d) {return d.DOMINIALITE+':'+d.CROISSANCE;});
+
+          cards.append("title");
+
+          cards.enter().append("rect")
+          //utiliser les echelles ordinales MonEchelleX(d.Arrondissement) & MonEchelleY(d.Arrondissement)
+              .attr("x", function(d) { return (monEchelleX.domain().length - 1) * gridSize; })//MonEchelleX.length
+              .attr("y", function(d) { return (monEchelleY.domain().length - 1) * gridSize; })//MonEchelleY.length
+              .attr("rx", 4)
+              .attr("ry", 4)
+              .attr("class", "croissance bordered")
+              .attr("width", gridSize)
+              .attr("height", gridSize)
+              .style("fill", colors[0]);
+
+          cards.transition().duration(1000)
+              .style("fill", function(d) { return colorScale(d.value); });
+
+          cards.select("title").text(function(d) { return d.value; });
+          
+          cards.exit().remove();
+
+          var legend = svg.selectAll(".legend")
+              .data([0].concat(colorScale.quantiles()), function(d) { return d; });
+
+          legend.enter().append("g")
+              .attr("class", "legend");
+
+          legend.append("rect")
+            .attr("x", function(d, i) { return legendElementWidth * i; })
+            .attr("y", height)
+            .attr("width", legendElementWidth)
+            .attr("height", gridSize / 2)
+            .style("fill", function(d, i) { return colors[i]; });
+
+          legend.append("text")
+            .attr("class", "mono")
+            .text(function(d) { return "= " + Math.round(d); })
+            .attr("x", function(d, i) { return legendElementWidth * i; })
+            .attr("y", height + gridSize);
+
+          legend.exit().remove();
+
+        });
+      };
+      heatmapChart(datasets[0])
+      
+    </script>    
+    </body>
+</html>
