@@ -37,8 +37,8 @@ and open the template in the editor.
         </div>
     <script type="text/javascript">
         var margin = { top: 50, right: 0, bottom: 100, left: 30 },
-            width = 960 - margin.left - margin.right,
-            height = 430 - margin.top - margin.bottom,
+            width = 1300 - margin.left - margin.right,
+            height = 900 - margin.top - margin.bottom,
             datasets= ["ArbreTotal.txt"];//Ajouter "ArbreTotal2.tsv" ou gerer a part
         
         var svg = d3.select("#chart").append("svg")
@@ -93,18 +93,18 @@ and open the template in the editor.
           .enter().append("text")
             .text(function (d) { return d; })
             .attr("x", 0)
-            .attr("y", function (d, i) { return i * gridSize; })//MonEchelleY
+            .attr("y", function (d, i) { return (i+3) * gridSize; })//MonEchelleY
             .style("text-anchor", "left")
-            .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
+            .attr("transform", "translate(-6," + gridSize / 1.5 + ")");
            
       var arrondissementLabels = svg.selectAll(".arrondissementLabel")
           .data(arrondissements)
           .enter().append("text")
             .text(function(d) { return d; })
-            .attr("x", function(d, i) { return i * gridSize; })//MonEchelleX
-            .attr("y", 0)
+            .attr("y", function(d, i) { return (i+2) * gridSize; })//MonEchelleX
+            .attr("x", 0)
             .style("text-anchor", "end")
-            .attr("transform", "translate(" + gridSize / 2 + ", -6)  rotate(-90)")
+            .attr("transform", "translate(" + gridSize / 2 + ", -6)  rotate(-90)");
          
           
           var cards = svg.selectAll(".CROISSANCE")
