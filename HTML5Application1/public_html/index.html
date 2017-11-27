@@ -22,7 +22,7 @@
         fill: #000;
       }
     </style>
-    <script src="http://d3js.org/d3.v3.js"></script>
+    <script src="http://d3js.org/d3.v4.js"></script>
   </head>
   <body>
     <div id="chart"></div>
@@ -77,20 +77,21 @@
         //Calcule des series de données par prénoms
         var seriesParDominialite = {};
         var seriesParArrondissement = {};
+       
         data.forEach(d => {
-            var serieDom = seriesParDominialite[d.dominialite] = d.dominialite in seriesParDominialite ? seriesParDominialite[d.dominialite] : [];
+            var serieCroi = seriesParDominialite[d.dominialite] = d.dominialite in seriesParDominialite ? seriesParDominialite[d.dominialite] : [];
             var serieArr = seriesParArrondissement[d.arrondissement] = d.arrondissement in seriesParArrondissement ? seriesParArrondissement[d.arrondissement] : [];
             //Ajoute la donnée à la série
-            serieDom.push(d);
-            serieArr.push(d);
+            serieCroi.push(d.croissance);
+            serieArr.push(d.arrondissement);
         });
         //Récupère l'ensemble des clé (prénoms) et des valeurs (series)
         dataset.dominialites = Object.keys(seriesParDominialite);
         dataset.seriesDom = Object.values(seriesParDominialite);
         dataset.arrondissements = Object.keys(seriesParArrondissement);
         dataset.seriesArr = Object.values(seriesParArrondissement);
-        console.log(dataset.dominialites);
-        console.log(dataset.seriesDom);
+       console.log( Object.values(seriesParArrondissement).indexOf(5));
+       console.log(dataset.seriesDom);
         console.log(dataset.arrondissements);
         console.log(dataset.seriesArr);
        

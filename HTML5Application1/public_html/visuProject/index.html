@@ -36,59 +36,62 @@ and open the template in the editor.
         <div id="dataset-picker">
         </div>
     <script type="text/javascript">
-        var margin = { top: 50, right: 0, bottom: 100, left: 30 },
+        const margin = { top: 50, right: 0, bottom: 100, left: 30 },
             width = 1300 - margin.left - margin.right,
             height = 900 - margin.top - margin.bottom,
-            datasets= ["ArbreTotal.txt"];//Ajouter "ArbreTotal2.tsv" ou gerer a part
+            datasets= ["ArbreFiltres.tsv"];//Ajouter "ArbreTotal2.tsv" ou gerer a part
         
-        var svg = d3.select("#chart").append("svg")
+        const svg = d3.select("#chart").append("svg")
           .attr("width", width + margin.left + margin.right)
           .attr("height", height + margin.top + margin.bottom)
           .append("g")
           .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
- 
-
-        
-        var heatmapChart = function(tsvFile) {
-        d3.tsv(tsvFile,
-        function(d) {
-          return {
+          
+          //Test
+        const type = (d) => {
+        return {
              dominialite: d.DOMINIALITE,
              croissance: d.CROISSANCE,
-             arrondissement: d.ARRONDISSEMENT 
-          };
-        },
-        function(error, data) {
+             arrondissement: d.ARRONDISSEMENT
+
+        };
+      };
+         
+        //A commente
+        const heatmapChart = function(tsvFile) {
+        d3.tsv(tsvFile,type,(error, data) => {
+          //Renvoi la liste des valeurs des arrondissements
+          const tabArrondissementsUniques = d3.set(data, d => d.arrondissement).values();
+          const monEchelleX = d3.scaleBand().domain(tabArrondissementsUniques).range([0, width]);
+          const tabDominialitesUniques = d3.set(data, d=> d.dominialite).values();
+          const monEchelleY = d3.scaleBand().domain(tabDominialitesUniques).range([0, height]);
+          const gridSize = monEchelleX.bandwidth();
+          const tabCroissancesUniques = d3.set(data, d=> d.croissance).values();
+          const tabCrois = d3.tsv(type,data.croissance);
           
-          var tabArrondissementsUniques = d3.set(data, d => d.arrondissement).values();
-          var monEchelleX = d3.scaleBand().domain(tabArrondissementsUniques).range([0, width]);
-          var tabDominialitesUniques = d3.set(data, d=> d.dominialite).values();
-          var monEchelleY = d3.scaleBand().domain(tabDominialitesUniques).range([0, height]);
-          var gridSize = monEchelleX.bandwidth();   
-          var legendElementWidth = gridSize*2,
+          const seriesCroissances= {};
+       
+                data.forEach(d => {
+                    const serieCroi = seriesCroissances[d.dominialite] = d.dominialite in seriesCroissances ? seriesCroissances[d.dominialite] : [];
+                     serieCroi.push(d.croissance);
+             });
+        const legendElementWidth = gridSize*2,
               buckets = 9,
               colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"], // alternatively colorbrewer.YlGnBu[9]
-              //Liste distinct des dominialite 
-              //dominialites= tabArrondissement
               dominialites = tabDominialitesUniques,
-              //Liste distinct des espece et/ou arrondissement
-              //arrondissements= tabArrondissementsUniques
               arrondissements = tabArrondissementsUniques;
              
-              
-             // console.log(dominialites);
-                //console.log(arrondissements);
-              //console.log(monEchelleY.domain());
              
-              //console.log(monEchelleY.domain().length);
-              //console.log(monEchelleX.domain().length);
+
+             
               //Echelle de couleur par quantilles statistiques
-          var colorScale = d3.scaleQuantile()
-              .domain([0, buckets - 1, d3.max(data, function (d) { return d.croissance; })])
-              .range(colors);
+         const colorScale = d3.scaleQuantile()
+              .domain(tabCroissancesUniques) //[0,buckets-1,d3.max(data,(d) => d.croissance)])//.domain(Object.values(seriesCroissances))//
+              //.range(["#FFFFDD", "#3E9583", "#1F2D86"]); 
+            .range(colors);
 
                  
-         var dominialiteLabels = svg.selectAll(".dominialiteLabel")
+         const dominialiteLabels = svg.selectAll(".dominialiteLabel")
           .data(dominialites)
           .enter().append("text")
             .text(function (d) { return d; })
@@ -97,55 +100,59 @@ and open the template in the editor.
             .style("text-anchor", "left")
             .attr("transform", "translate(-6," + gridSize / 1.5 + ")");
            
-      var arrondissementLabels = svg.selectAll(".arrondissementLabel")
+         const arrondissementLabels = svg.selectAll(".arrondissementLabel")
           .data(arrondissements)
           .enter().append("text")
             .text(function(d) { return d; })
             .attr("y", function(d, i) { return (i+2) * gridSize; })//MonEchelleX
             .attr("x", 0)
             .style("text-anchor", "end")
-            .attr("transform", "translate(" + gridSize / 2 + ", -6)  rotate(-90)");
+            .attr("transform", "translate(" + gridSize / 2 + ", -6)  rotate(-90)")
+            .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "dayLabel mono axis axis-workweek" : "dayLabel mono axis"); });
+
          
           
-          var cards = svg.selectAll(".CROISSANCE")
-              .data(data, function(d) {return d.DOMINIALITE+':'+d.CROISSANCE;});
+          var cards = svg.selectAll(".ARRONDISSEMENT")
+              .data(data, (d) => d.DOMINIALITE+':'+d.ARRONDISSEMENT);
 
           cards.append("title");
-
+          
           cards.enter().append("rect")
           //utiliser les echelles ordinales MonEchelleX(d.Arrondissement) & MonEchelleY(d.Arrondissement)
-              .attr("x", function(d) { return (monEchelleX.domain().length - 1) * gridSize; })//MonEchelleX.length
-              .attr("y", function(d) { return (monEchelleY.domain().length - 1) * gridSize; })//MonEchelleY.length
+              .attr("x",function(d) { return (monEchelleX.domain().indexOf(d.arrondissement)+2) * gridSize; })//MonEchelleX.length
+              .attr("y",function(d) { return (monEchelleY.domain().indexOf(d.dominialite)+3) * gridSize; })//MonEchelleY.length
               .attr("rx", 4)
               .attr("ry", 4)
-              .attr("class", "croissance bordered")
+              .attr("class", "hour bordered")
               .attr("width", gridSize)
               .attr("height", gridSize)
-              .style("fill", colors[0]);
+              .style("fill", colors[0])
+              .merge(cards)
+              .transition()
+              .duration(1000)
+              .style("fill", (d) => colorScale(d.croissance) );
 
-          cards.transition().duration(1000)
-              .style("fill", function(d) { return colorScale(d.value); });
-
-          cards.select("title").text(function(d) { return d.value; });
+          cards.select("title").text((d) => d.croissance);
           
           cards.exit().remove();
 
-          var legend = svg.selectAll(".legend")
-              .data([0].concat(colorScale.quantiles()), function(d) { return d; });
+          const legend = svg.selectAll(".legend")
+            .data([0].concat(colorScale.quantiles()),(d) => d);
 
-          legend.enter().append("g")
+          const legend_g = legend.enter().append("g")
               .attr("class", "legend");
+              
 
-          legend.append("rect")
-            .attr("x", function(d, i) { return legendElementWidth * i; })
+          legend_g.append("rect")
+            .attr("x", (d, i) => legendElementWidth * i)
             .attr("y", height)
             .attr("width", legendElementWidth)
             .attr("height", gridSize / 2)
             .style("fill", function(d, i) { return colors[i]; });
 
-          legend.append("text")
+          legend_g.append("text")
             .attr("class", "mono")
-            .text(function(d) { return "= " + Math.round(d); })
+            .text((d) => "≥ " + Math.round(d))
             .attr("x", function(d, i) { return legendElementWidth * i; })
             .attr("y", height + gridSize);
 
@@ -153,8 +160,19 @@ and open the template in the editor.
 
         });
       };
-      heatmapChart(datasets[0])
+      heatmapChart(datasets[0]);
       
+      var datasetpicker = d3.select("#dataset-picker").selectAll(".dataset-button")
+        .data(datasets);
+
+      datasetpicker.enter()
+        .append("input")
+        .attr("value",(d) => "Dataset " + d)
+        .attr("type", "button")
+        .attr("class", "dataset-button")
+        .on("click", function(d) {
+          heatmapChart(d);
+        });
     </script>    
     </body>
 </html>
